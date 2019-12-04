@@ -1,6 +1,9 @@
 import React,{Component} from 'react';
 import {Link, withRouter} from 'react-router-dom';
 import axios from 'axios';
+import setAuthToken from "../utils/setAuthToken";
+import jwt_decode from "jwt-decode";
+const Swal = require('sweetalert2');
 
 class Login extends React.Component {
   constructor (props){
@@ -20,7 +23,8 @@ class Login extends React.Component {
     }
     
     checkAuth(){
-        if(localStorage.userToken){
+      
+        if(localStorage.jwtToken){
             this.props.history.push("/profile")
         }
     }
@@ -34,29 +38,44 @@ class Login extends React.Component {
     });
   }
   
-handleSubmit(event){
-  var body = this.state;
+    handleSubmit(event){
+          var body = this.state;
 
-  let url = 'api/registration';
-  axios({
-    method: 'post',
-    url: 'http://localhost:3001/api/login',
-    data: body
-  })
-  .then(response=>{
-       window.x = response;
-       if(response.status == 200){ // success
-          localStorage.setItem('userToken', response.token);
-          this.props.history.push('/profile');
-       }
-       
-  })
-  .catch(error =>{
-       console.log(error);
-  })
-  // alert('Form has been submitted');
-  event.preventDefault();
-}
+          let url = 'api/registration';
+          axios({
+            method: 'post',
+            url: '/api/login',
+            data: body
+          })
+          .then(response=>{
+            //Set token to local storage
+            const {token} = response.data;
+            localStorage.setItem("jwtToken", token);
+            //Set token to Auth header
+            setAuthToken(token);
+            //Decode token to get user data
+            const decoded = jwt_decode(token);
+            window.x = decoded;
+            //Set current user
+            localStorage.setItem("currentUser", decoded);
+            
+            // this.props.history.push('/profile');
+            window.location.reload();
+              
+          })
+          .catch(error =>{
+              console.log(error.response.data);
+              window.x = error;
+              Swal.fire({
+                title: 'Error!',
+                text: error.response.data,
+                icon: 'error',
+                confirmButtonText: 'Cool'
+              })
+          })
+          // alert('Form has been submitted');
+          event.preventDefault();
+    }
 
   
 
@@ -64,7 +83,7 @@ handleSubmit(event){
   render() {
     return(
         <div className="row justify-content-center">
-      <div className="col-md-9 col-lg-12 col-xl-10">
+      <div className="col-md-9 col-lg-12 col-xl-10" style={{marginTop:80+'px'}}>
         <div className="card shadow-lg o-hidden border-0 my-5">
           <div className="card-body p-0">
             <div className="row">
@@ -89,8 +108,8 @@ handleSubmit(event){
                     <hr />
                   </form>
                 
-                  <div className="text-center"><a className="small" href="forgot-password.html">Forgot Password?</a></div>
-                  <div className="text-center"><a className="small" href="register.html">Create an Account!</a></div>
+                  
+                  <div className="text-center"><a className="small" href="register">Create an Account!</a></div>
                 </div>
               </div>
             </div>
